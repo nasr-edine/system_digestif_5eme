@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interro blanche – L'appareil digestif</title>
+<style>
+:root{--bg:#edf3ee;--ink:#17301f;--mut:#566b5c;--acc:#1f6f4a;--accl:#dcf1e4;--bad:#b42318;--badl:#fde8e6;--line:#cbd9cf}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:780px;margin:0 auto;padding:16px}h1{font-size:1.6rem;margin:.2em 0}h2{font-size:1.15rem;margin:0 0 .6em}
+.card{background:#fff;border:2px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}.hide{display:none}.sub{color:var(--mut);font-size:.95rem}
+button{font:inherit;font-weight:600;background:var(--acc);color:#fff;border:0;border-radius:10px;padding:12px 22px;cursor:pointer}
+button.sec{background:#fff;color:var(--ink);border:2px solid var(--line)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+input,select,textarea{font:inherit;border:2px solid var(--line);border-radius:8px;padding:8px 10px;max-width:100%}
+textarea{width:100%}
+#bar{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
+#timer{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}#timer.low{color:#fdba74}
+.q{padding:10px 0;border-top:1px solid var(--line)}.q:first-of-type{border-top:0}
+.fl{display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap}
+svg{max-width:100%;height:auto;background:#fbfdfb;border:2px solid var(--line);border-radius:10px;margin:6px 0}
+.pal{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}.pal label{display:flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer}
+.pal label:has(input:checked){border-color:var(--ink);background:#f3f6f4}.pal i{display:inline-block;width:18px;height:18px;border-radius:50%;border:1px solid #666}
+.big{font-size:3rem;font-weight:800;line-height:1}.tip{background:var(--accl);border-radius:10px;padding:10px 14px;margin:8px 0}
+.warn{background:var(--badl);color:var(--bad);border-radius:10px;padding:8px 12px;font-size:.9rem}
+.r{padding:4px 8px;border-radius:6px;margin:3px 0;font-size:.95rem}.r.y{background:#e8f7ee}.r.n{background:var(--badl)}.r.m{background:#fff4d6}
+.lv{display:flex;align-items:center;gap:10px;margin:6px 0}.lv span:first-child{flex:0 0 250px;font-size:.95rem}.lv .t{flex:1;height:12px;background:var(--line);border-radius:6px}.lv .t i{display:block;height:100%;background:var(--acc);border-radius:6px}
+</style></head><body>
+<div id="bar" class="hide"><span>SVT – L'appareil digestif</span><span id="timer">20:00</span></div>
+<main>
+<section id="home" class="card">
+  <h1>Interro blanche de SVT : l'appareil digestif</h1>
+  <p class="sub">Mini-évaluation : schéma et définitions · 20 minutes · 20 points</p>
+  <ul><li>Fais l'interro dans le calme, avec un brouillon, <b>sans cahier ni fiches</b>.</li>
+  <li><b>Partie 1 :</b> sur le schéma, indique ce que montre chaque flèche numérotée, puis colorie le trajet (3 couleurs et leur légende).</li>
+  <li><b>Partie 2 :</b> les organes et les définitions à écrire avec tes mots (suc digestif, enzyme, nutriment).</li>
+  <li>Le chrono démarre au clic. À 0, l'interro est envoyée automatiquement. Tout est sauvegardé sur cet appareil.</li></ul>
+  <p><label>Prénom <input id="name" value="Anfal" autocomplete="off" style="width:150px"></label></p>
+  <p id="cfgwarn" class="warn hide">Google Sheet non configuré : les résultats restent sur cet appareil (voir SHEET_URL).</p>
+  <p><button id="go">Commencer l'interro</button></p>
+</section>
+<section id="exam" class="hide"><div id="qs"></div><p><button id="done">Terminer et envoyer</button></p></section>
+<section id="res" class="hide"></section>
+</main>
+<script>
+const SHEET_URL = "";            // URL Apps Script (…/exec)
+const TOKEN = "change-moi";
+const KEY = "digestif-v1", EVID = "svt-digestif", MIN = 20;
+// ====== SCHÉMA ======
+const COL={rouge:"#e5484d",vert:"#3ab54a",noir:"#2b2b2b",aucune:"#d9d9d9"};
+const PTR=[[1,50,82,252,82],[2,470,92,306,92],[3,50,150,262,150],[4,50,235,200,262],[5,470,235,325,262],[6,470,310,310,316],[7,50,385,225,390],[8,50,445,197,430],[9,470,480,262,500]];
+function SCH(ptr,inter){
+ const z=(k,id)=>inter?` data-z="${id}" data-k="${k}"`:"",g="#d9d9d9";
+ let s=`<svg viewBox="0 0 520 520" width="520" role="img" aria-label="Corps humain et appareil digestif">
+ <circle cx="260" cy="62" r="38" fill="#f3d9c6" stroke="#444" stroke-width="2"/><rect x="240" y="96" width="40" height="24" fill="#f3d9c6"/>
+ <path d="M200 112 Q140 130 130 220 L125 340 Q130 430 160 480 L360 480 Q390 430 395 340 L390 220 Q380 130 320 112 Z" fill="#f7e6da" stroke="#444" stroke-width="2"/>
+ <circle cx="246" cy="56" r="3" fill="#444"/><circle cx="274" cy="56" r="3" fill="#444"/>
+ <ellipse cx="260" cy="82" rx="10" ry="4" fill="${g}" stroke="#444"${z("fill","Z1")} style="pointer-events:fill"/>
+ <ellipse cx="302" cy="92" rx="10" ry="14" fill="#e8b57a" stroke="#444"/>
+ <path d="M170 245 Q200 225 255 238 L262 262 Q240 295 195 292 Q165 280 170 245 Z" fill="#9c4f3c" stroke="#444" stroke-width="1.5"/>
+ <path d="M255 308 Q290 300 330 312 Q315 326 270 324 Z" fill="#e9c46a" stroke="#444" stroke-width="1.5"/>
+ <path d="M200 462 L196 362 Q196 343 215 343 L318 343 Q335 343 335 362 L335 440 Q335 466 300 472 L262 480 L262 497" fill="none" stroke="${g}" stroke-width="16" stroke-linejoin="round"${z("stroke","Z5")} style="pointer-events:stroke"/>
+ <circle cx="262" cy="500" r="7" fill="${g}" stroke="#444"${z("fill","Z5")} style="pointer-events:fill"/>
+ <path d="M262 290 L262 352 Q300 358 300 372 Q222 376 222 390 Q300 394 300 408 Q224 412 226 426 Q300 430 296 444" fill="none" stroke="${g}" stroke-width="12" stroke-linejoin="round"${z("stroke","Z4")} style="pointer-events:stroke"/>
+ <path d="M260 86 L260 112 Q262 175 268 242" fill="none" stroke="${g}" stroke-width="10" stroke-linecap="round"${z("stroke","Z1")} style="pointer-events:stroke"/>
+ <path d="M262 240 Q300 226 334 248 L336 270 L262 270 Z" fill="${g}" stroke="#444" stroke-width="1.5"${z("fill","Z2")} style="pointer-events:fill"/>
+ <path d="M262 270 L336 270 Q342 298 316 305 Q284 310 262 292 Z" fill="${g}" stroke="#444" stroke-width="1.5"${z("fill","Z3")} style="pointer-events:fill"/>`;
+ if(ptr)PTR.forEach(([n,cx,cy,ax,ay])=>{const sx=cx<260?cx+13:cx-13;s+=`<g style="pointer-events:none"><line x1="${sx}" y1="${cy}" x2="${ax}" y2="${ay}" stroke="#14213d" stroke-width="1.5"/><circle cx="${ax}" cy="${ay}" r="3.5" fill="#14213d"/><circle cx="${cx}" cy="${cy}" r="13" fill="#fff" stroke="#14213d" stroke-width="1.5"/><text x="${cx}" y="${cy+5}" text-anchor="middle" font-weight="700" font-size="14">${n}</text></g>`});
+ return s+"</svg>"}
+const PAL=`<div class="pal" role="radiogroup" aria-label="Couleur du pinceau">${[["rouge","Rouge"],["vert","Vert"],["noir","Noir"],["aucune","Gomme"]].map(([v,l])=>`<label><input type="radio" name="brush" value="${v}"><i style="background:${COL[v]}"></i>${l}</label>`).join("")}</div><p class="sub" id="bmsg">Choisis une couleur, puis clique sur la partie du schéma à colorier.</p>`;
+// ====== CONTENU ======
+const Q=(q,o)=>({q,f:[{t:"sel",o,a:o[0]}]});
+const S=(l,o,a,w)=>({t:"sel",l,o,a,w});
+const ORG=["bouche","glandes salivaires","œsophage","foie","estomac","pancréas","intestin grêle","gros intestin","anus"];
+const LEG=["aliment","nutriment","excrément"],TG=["tube digestif","glande digestive"];
+const Z=(z,l,a)=>({t:"zone",z,l:"Couleur de : "+l,a});
+const EXAM={secs:[
+{id:"A",t:"Partie 1 – Le schéma",tip:"Tube digestif : bouche, œsophage, estomac, intestin grêle, gros intestin, anus. Glandes digestives : glandes salivaires, foie, pancréas (et estomac). Couleurs du cours : rouge = aliment (bouche, œsophage, haut de l'estomac), vert = nutriment (bas de l'estomac, intestin grêle), noir = excrément (gros intestin, anus).",qs:[
+ {q:"<b>Exercice 1.</b> Écris le nom de l'organe indiqué par chaque flèche numérotée.",svg:SCH(true,false),f:ORG.map((o,i)=>S(`${i+1} =`,ORG,o))},
+ {q:"<b>Exercice 2.</b> Colorie le schéma pour montrer l'état de ce qui circule dans le tube digestif, puis écris la légende de chaque couleur.",svg:PAL+SCH(false,true),f:[S("Rouge =",LEG,"aliment",.5),S("Vert =",LEG,"nutriment",.5),S("Noir =",LEG,"excrément",.5),Z("Z1","la bouche et l'œsophage","rouge"),Z("Z2","l'estomac, partie haute (entrée des aliments)","rouge"),Z("Z3","l'estomac, partie basse (vers l'intestin)","vert"),Z("Z4","l'intestin grêle","vert"),Z("Z5","le gros intestin et l'anus","noir")]}]},
+{id:"B",t:"Partie 2 – Les organes et la digestion",tip:"Les aliments sont broyés dans la bouche et l'estomac, où le bol alimentaire devient liquide. Les nutriments se forment dans l'estomac et l'intestin grêle grâce aux enzymes des sucs digestifs. Les résidus se solidifient dans le gros intestin et sont évacués par l'anus. Les glandes (salivaires, foie, pancréas) fabriquent des sucs digestifs.",qs:[
+ {q:"<b>Exercice 3.</b> Classe chaque organe.",f:[S("Le foie fait partie…",["des glandes digestives","du tube digestif"],"des glandes digestives",.5),S("L'intestin grêle fait partie…",["du tube digestif","des glandes digestives"],"du tube digestif",.5),S("Le pancréas fait partie…",["des glandes digestives","du tube digestif"],"des glandes digestives",.5)]},
+ Q("L'estomac fait partie…",["à la fois du tube digestif et des glandes digestives","seulement du tube digestif","seulement des glandes digestives"]),
+ Q("Dans la bouche, les aliments sont…",["broyés et mélangés à la salive","transformés en excréments","transformés en nutriments dans le sang"]),
+ Q("Dans l'estomac, le bol alimentaire devient…",["liquide","solide","gazeux"]),
+ Q("Les nutriments se forment dans…",["l'estomac et l'intestin grêle","la bouche seulement","le gros intestin"]),
+ Q("Où la matière se solidifie-t-elle pour former les excréments ?",["dans le gros intestin","dans l'œsophage","dans l'estomac"]),
+ Q("Les glandes salivaires, le foie et le pancréas fabriquent…",["des sucs digestifs","des nutriments","des excréments"])]},
+{id:"C",t:"Partie 3 – Les définitions",tip:"Suc digestif : liquide contenu dans certains organes du système digestif (ex. la salive). Enzyme : molécule des sucs digestifs qui permet de former des nutriments en découpant les grosses molécules (ex. l'amylase). Nutriment : petite molécule issue de la digestion qui nous donne de l'énergie.",qs:[
+ {q:"<b>Exercice 4.</b> Définis chaque mot avec tes mots (1 ou 2 phrases). Ces définitions sont notées automatiquement sur des mots-clés et sont à relire par un adulte.",f:[
+  {t:"kw",l:"Suc digestif :",w:2,g:[/liquide/,/organe|systeme|digest/],show:"Liquide contenu dans certains organes du système digestif (ex. la salive)."},
+  {t:"kw",l:"Enzyme :",w:2,g:[/molecule/,/nutriment|decoup|transform|petite/],show:"Molécule contenue dans les sucs digestifs qui permet de former des nutriments (ex. l'amylase)."},
+  {t:"kw",l:"Nutriment :",w:2,g:[/molecule/,/digestion|aliment/,/energie/],show:"Petite molécule issue de la digestion qui nous donne de l'énergie."}]},
+ Q("Quelle enzyme se trouve dans la salive ?",["l'amylase","la bile","le glucose"])]}]};
+// ====== OUTILS ======
+const $=id=>document.getElementById(id);
+EXAM.F=[];EXAM.secs.forEach(s=>s.qs.forEach((q,qi)=>{q.id=s.id+(qi+1);q.f.forEach((f,fi)=>{f.id=q.id+(q.f.length>1?"."+(fi+1):"");f.sec=s.id;f.w=f.w||1;EXAM.F.push(f)})}));
+EXAM.SC=20/EXAM.F.reduce((a,f)=>a+f.w,0);
+const nk=s=>(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const gradeF=(f,v)=>{v=v||"";if(f.t==="kw"){const x=nk(v);return f.w*f.g.filter(r=>r.test(x)).length/f.g.length}return v&&v===f.a?f.w:0};
+const att=f=>f.show||f.a;
+const shuf=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+const fmt=n=>(Math.round(n*10)/10).toString().replace(".",",");
+const esc=s=>(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+let S_=null,tick=null,brush=null;
+const sv=()=>{try{localStorage.setItem(KEY,JSON.stringify(S_))}catch(e){}};
+async function send(p){p.token=TOKEN;if(!SHEET_URL)return false;
+ try{await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify(p)});return true}
+ catch(e){const q=JSON.parse(localStorage.getItem(KEY+"-q")||"[]");q.push(p);localStorage.setItem(KEY+"-q",JSON.stringify(q));return false}}
+async function flush(){const q=JSON.parse(localStorage.getItem(KEY+"-q")||"[]");if(!q.length||!SHEET_URL)return;localStorage.removeItem(KEY+"-q");for(const p of q)await send(p)}
+function begin(){S_={name:$("name").value.trim()||"Anfal",start:Date.now(),ans:{},blurs:0,done:false};sv();send({type:"start",name:S_.name,at:new Date().toISOString(),app:EVID});run()}
+function run(){$("home").classList.add("hide");$("exam").classList.remove("hide");render();$("bar").classList.remove("hide");const D=MIN*60;
+ const u=()=>{const l=Math.max(0,D-Math.floor((Date.now()-S_.start)/1000));$("timer").textContent=String(Math.floor(l/60)).padStart(2,"0")+":"+String(l%60).padStart(2,"0");$("timer").classList.toggle("low",l<=180);if(l<=0){clearInterval(tick);finish(true)}};u();tick=setInterval(u,500)}
+function ctl(f){const v=S_.ans[f.id]||"",id=`data-f="${f.id}"`;
+ if(f.t==="zone")return"";
+ if(f.t==="kw")return`<textarea ${id} rows="2" spellcheck="true">${esc(v)}</textarea>`;
+ return`<select ${id}><option value="">— choisir —</option>${shuf(f.o).map(o=>`<option${o===v?" selected":""}>${o}</option>`).join("")}</select>`}
+const paint=(z,c)=>document.querySelectorAll(`[data-z="${z}"]`).forEach(el=>el.setAttribute(el.dataset.k,COL[c]||COL.aucune));
+function render(){let h="";EXAM.secs.forEach(s=>{h+=`<div class="card"><h2>${s.t}</h2>`;
+ s.qs.forEach(q=>{h+=`<div class="q"><div>${q.q}</div>${q.svg||""}`;q.f.forEach(f=>{if(f.t!=="zone")h+=`<div class="fl">${f.l?`<span>${f.l}</span>`:""}${ctl(f)}</div>`});h+="</div>"});h+="</div>"});
+ $("qs").innerHTML=h;
+ document.querySelectorAll("[data-f]").forEach(el=>el.addEventListener("input",()=>{S_.ans[el.dataset.f]=el.value;sv()}));
+ EXAM.F.filter(f=>f.t==="zone").forEach(f=>paint(f.z,S_.ans[f.id]));
+ document.querySelectorAll('input[name="brush"]').forEach(r=>r.addEventListener("change",()=>{brush=r.value}));
+ $("qs").addEventListener("click",e=>{const el=e.target.closest("[data-z]");if(!el)return;
+  if(!brush){$("bmsg").textContent="Choisis d'abord une couleur ci-dessus.";return}
+  const f=EXAM.F.find(x=>x.z===el.dataset.z);S_.ans[f.id]=brush==="aucune"?"":brush;paint(f.z,brush);sv()})}
+async function finish(auto){if(S_.done&&S_.result)return;S_.done=true;clearInterval(tick);
+ const dur=Math.min(MIN*60,Math.round((Date.now()-S_.start)/1000)),SC=EXAM.SC;
+ const det=EXAM.F.map(f=>({id:f.id,sec:f.sec,rep:S_.ans[f.id]||"",att:att(f),max:f.w*SC,pts:gradeF(f,S_.ans[f.id])*SC}));
+ const total=det.reduce((a,d)=>a+d.pts,0);S_.result={det,total,dur,auto:!!auto};sv();
+ const sent=await send({type:"svt",ev:EVID,name:S_.name,at:new Date().toISOString(),total,dur,auto:!!auto,blurs:S_.blurs,det});showRes(sent)}
+function band(n){if(n>=16)return["Excellent","Tu maîtrises très bien le début du cours. Relis seulement tes petites erreurs."];
+ if(n>=12)return["Bon travail","Tu es au-dessus de la moyenne. Retravaille les parties signalées ci-dessous."];
+ if(n>=8)return["Presque là","Les bases sont là. Relis ton cours sur les parties signalées, puis refais l'interro."];
+ return["À reprendre","Reprends le schéma et les définitions avec ton cahier, puis refais l'interro : tu progresseras vite."]}
+function showRes(sent){clearInterval(tick);["bar","home","exam"].forEach(i=>$(i).classList.add("hide"));$("res").classList.remove("hide");
+ const R=S_.result,[t,m]=band(R.total);
+ let h=`<div class="card"><p class="sub">${esc(S_.name)} · ${Math.floor(R.dur/60)} min ${R.dur%60} s${R.auto?" · temps écoulé":""}</p><div class="big">${fmt(R.total)} / 20</div><h2>${t}</h2><p>${m}</p>
+ <p class="sub">${sent?"Résultat envoyé.":SHEET_URL?"Envoi impossible : il sera renvoyé à la prochaine ouverture.":"Résultat enregistré sur cet appareil uniquement."}</p></div><div class="card"><h2>Par partie</h2>`;let tips="";
+ EXAM.secs.forEach(s=>{const d=R.det.filter(x=>x.sec===s.id),g=d.reduce((a,x)=>a+x.pts,0),mx=d.reduce((a,x)=>a+x.max,0),p=Math.round(g/mx*100);
+  h+=`<div class="lv"><span>${s.t}</span><span class="t"><i style="width:${p}%"></i></span><span>${p}%</span></div>`;if(p<60)tips+=`<div class="tip"><b>${s.t}</b><br>${s.tip}</div>`});
+ h+=`</div><div class="card"><h2>À retravailler</h2>${tips||"<p><b>Toutes les parties sont bien maîtrisées.</b></p>"}</div><div class="card"><h2>Correction</h2>`;
+ EXAM.secs.forEach(s=>{h+=`<p><b>${s.t}</b></p>`;s.qs.forEach(q=>q.f.forEach(f=>{const d=R.det.find(x=>x.id===f.id),full=d.pts>=d.max-1e-9,part=!full&&d.pts>0,lab=(f.l||q.q).replace(/<[^>]+>/g,"").slice(0,90);
+  h+=`<div class="r ${full?"y":part?"m":"n"}">${full?"✓":part?"≈":"✗"} ${esc(lab)}${full?"":` — ta réponse : <i>${esc(d.rep)||"—"}</i> · attendu : <b>${esc(d.att)}</b>`}</div>`}))});
+ h+=`</div><p><button class="sec" id="again">Refaire l'interro</button></p>`;$("res").innerHTML=h;
+ $("again").onclick=()=>{if(confirm("Effacer cet essai et recommencer ?")){localStorage.removeItem(KEY);location.reload()}}}
+$("go").onclick=begin;
+$("done").onclick=()=>{if(confirm("Terminer et envoyer l'interro ?"))finish(false)};
+if(!SHEET_URL)$("cfgwarn").classList.remove("hide");
+document.addEventListener("visibilitychange",()=>{if(S_&&!S_.done&&document.hidden){S_.blurs++;sv()}});
+flush();
+try{S_=JSON.parse(localStorage.getItem(KEY))}catch(e){S_=null}
+if(S_){S_.blurs=S_.blurs||0;if(S_.done&&S_.result)showRes(true);else if(S_.done)finish(true);else run()}
+</script></body></html>
